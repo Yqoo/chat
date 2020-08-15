@@ -7,16 +7,16 @@
           <span v-if="!isCollapse">MyChat</span>
         </div>
         <el-menu
-          default-active="register"
+          :default-active="comp"
           class="el-menu-vertical-demo"
           background-color="rgba(48,65,86,1)"
           text-color="#fff"
-          active-text-color="#4390de"
+          active-text-color="#409eff"
           router
           :collapse="isCollapse"
         >
           <el-menu-item index="register">
-            <i class="el-icon-user"></i>
+            <i class="el-icon-service"></i>
             <span slot="title">添加客服</span>
           </el-menu-item>
           <el-menu-item index="history">
@@ -24,7 +24,7 @@
             <span slot="title">历史消息</span>
           </el-menu-item>
           <el-menu-item index="chat">
-            <i class="el-icon-chat-dot-square"></i>
+            <i class="el-icon-s-promotion"></i>
             <span slot="title">聊天</span>
           </el-menu-item>
         </el-menu>
@@ -38,25 +38,22 @@
                 style="cursor:pointer;margin-right:10px"
                 @click="isCollapse = !isCollapse"
               ></i>
-              <!--  <el-breadcrumb separator-class="el-icon-arrow-right">
-                <el-breadcrumb-item :to="{ path: '/' }"
-                  >首页</el-breadcrumb-item
-                >
-                <el-breadcrumb-item>活动管理</el-breadcrumb-item>
-              </el-breadcrumb> -->
             </div>
           </div>
           <div>
-            <el-dropdown trigger="click">
+            <el-dropdown trigger="click" @command="handleCommand">
               <div>
                 <img :src="require('@/assets/image/user.gif')" />
                 <i class="el-icon-caret-bottom"></i>
               </div>
               <el-dropdown-menu slot="dropdown">
-                <el-dropdown-item icon="el-icon-user-solid"
+                <el-dropdown-item icon="el-icon-user-solid" command="userInfo"
                   >个人中心</el-dropdown-item
                 >
-                <el-dropdown-item divided icon="el-icon-switch-button"
+                <el-dropdown-item
+                  divided
+                  icon="el-icon-switch-button"
+                  command="logout"
                   >退出登录</el-dropdown-item
                 >
               </el-dropdown-menu>
@@ -76,8 +73,22 @@ export default {
   name: "Home",
   data() {
     return {
-      isCollapse: false
+      isCollapse: false,
+      comp: "chat"
     };
+  },
+  methods: {
+    handleCommand(command) {
+      const actived = {
+        userInfo: () => {
+          this.comp = "";
+          this.$router.push({
+            path: "/personal"
+          });
+        }
+      };
+      actived[command]();
+    }
   }
 };
 </script>
@@ -91,7 +102,7 @@ export default {
       line-height: 50px;
     }
     .left {
-      padding-left: 10px;
+      padding-left: 20px;
       background: rgba(48, 65, 86, 1);
       color: #fff;
       img {
@@ -142,6 +153,7 @@ export default {
       height: calc(100% - 50px);
       .el-menu {
         height: 100%;
+        width: 100%;
         .el-menu-item {
           height: 46px;
           line-height: 46px;
