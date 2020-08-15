@@ -1,12 +1,14 @@
 <template>
-  <div class="home"></div>
+  <div>login</div>
 </template>
 
 <script>
 export default {
-  name: "Home",
+  name: "Login",
   data() {
     return {};
   }
 };
 </script>
+
+<style lang="scss" scoped></style>
