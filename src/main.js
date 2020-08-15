@@ -2,22 +2,21 @@ import Vue from "vue";
 import App from "./App.vue";
 import router from "./router";
 import "element-ui/lib/theme-chalk/index.css";
-import { Button, Select } from "element-ui";
+import ElementUI from "element-ui";
 import axios from "axios";
-
+import "./assets/styles/common.scss";
 Vue.prototype.axios = axios;
 axios.defaults.headers["Content-Type"] = "application/x-www-form-urlencoded";
 axios.defaults.withCredentials = true; //运行携带cookie
-Vue.component(Button.name, Button);
-Vue.component(Select.name, Select);
-Vue.config.productionTip = false;
 
+Vue.config.productionTip = false;
+Vue.use(ElementUI, { size: "small", zIndex: 1000 });
 router.beforeEach((to, from, next) => {
   //全局路由守卫
   if (to.path === "/login") {
     next();
   } else {
-    let token = localStorage.getItem("loginToken");
+    let token = localStorage.getItem("Token");
     if (token === null || token === "") {
       next({ path: "/login" });
     } else {
