@@ -1,5 +1,6 @@
 <template>
   <div class="comp-personal">
+    <p class="title"><i class="el-icon-user-solid"></i>个人信息</p>
     <div class="main">
       <p class="top">
         <span>个人信息</span>
@@ -20,11 +21,14 @@
         <el-avatar :src="avatar"></el-avatar>
         <p>Admin</p>
       </div>
-      <el-form :model="form" :rules="rules" size="mini" label-width="0px">
-        <el-form-item label="">
+      <el-form :model="form" :rules="rules" size="mini" label-width="45px">
+        <el-form-item label="姓名" prop="name">
           <el-input v-model="form.name" :disabled="notEdit"></el-input>
         </el-form-item>
-        <el-form-item label="">
+        <el-form-item label="账号" prop="account">
+          <el-input v-model="form.account" :disabled="notEdit"></el-input>
+        </el-form-item>
+        <el-form-item label="密码" prop="password">
           <el-input
             type="password"
             v-model="form.password"
@@ -51,10 +55,15 @@ export default {
     return {
       avatar,
       form: {
-        name: "Admin",
+        name: "super admin",
+        account: "Admin",
         password: "123456"
       },
-      rules: {},
+      rules: {
+        name: [{ required: true, message: "请填写姓名", trigger: "blur" }],
+        account: [{ required: true, message: "请填写账号", trigger: "blur" }],
+        password: [{ required: true, message: "请填写密码", trigger: "blur" }]
+      },
       notEdit: true
     };
   }
@@ -67,6 +76,12 @@ export default {
   width: 100%;
   height: 100%;
   position: relative;
+  .title {
+    height: 50px;
+    line-height: 50px;
+    padding-left: 20px;
+    color: #409eff;
+  }
   .main {
     height: 550px;
     width: 350px;

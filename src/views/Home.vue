@@ -17,15 +17,19 @@
         >
           <el-menu-item index="register">
             <i class="el-icon-service"></i>
-            <span slot="title">添加客服</span>
+            <span slot="title">客服管理</span>
           </el-menu-item>
           <el-menu-item index="history">
             <i class="el-icon-date"></i>
-            <span slot="title">历史消息</span>
+            <span slot="title">聊天记录</span>
           </el-menu-item>
           <el-menu-item index="chat">
             <i class="el-icon-s-promotion"></i>
-            <span slot="title">聊天</span>
+            <span slot="title">客服聊天</span>
+          </el-menu-item>
+          <el-menu-item index="map">
+            <i class="el-icon-map-location"></i>
+            <span slot="title">地图</span>
           </el-menu-item>
         </el-menu>
       </el-col>
