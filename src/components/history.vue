@@ -11,7 +11,7 @@
       <el-table-column label="用户手机" prop="phone"></el-table-column>
       <el-table-column label="客服姓名" prop="name"></el-table-column>
       <el-table-column label="账号" prop="account"></el-table-column>
-      <el-table-column label="内容" prop="content"></el-table-column>
+      <el-table-column label="创建时间" prop="createTime"></el-table-column>
       <el-table-column label="管理" width="200px" fixed="right">
         <template slot="header">
           <el-input
