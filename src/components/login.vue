@@ -52,13 +52,14 @@ export default {
       this.axios
         .get("/userController/login?account=ces1&password=123456")
         .then(s => {
-          console.log(s);
+          if (s.data.status === 200) {
+            localStorage.setItem("Token", new Date().getTime());
+            this.$router.push({
+              path: "/"
+            });
+          }
         })
         .catch(e => console.log(e));
-      /* localStorage.setItem("Token", new Date().getTime());
-      this.$router.push({
-        path: "/"
-      }); */
     }
   }
 };
