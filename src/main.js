@@ -6,9 +6,11 @@ import ElementUI from "element-ui";
 import axios from "axios";
 import "./assets/styles/common.scss";
 Vue.prototype.axios = axios;
-axios.defaults.headers["Content-Type"] = "application/x-www-form-urlencoded";
+axios.defaults.headers["Content-Type"] =
+  "application/x-www-form-urlencoded;charset=UTF-8";
 axios.defaults.withCredentials = true; //运行携带cookie
-
+axios.defaults.baseURL = "http://192.168.0.102:8090";
+axios.defaults.timeout = 50000;
 Vue.config.productionTip = false;
 Vue.use(ElementUI, { size: "small", zIndex: 1000 });
 router.beforeEach((to, from, next) => {

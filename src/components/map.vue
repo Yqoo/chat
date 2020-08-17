@@ -70,7 +70,17 @@
           <el-input v-model="form.desc"></el-input>
         </el-form-item>
         <el-form-item label="经纬度" prop="jwd">
-          <el-input v-model="form.jwd"></el-input>
+          <el-input
+            v-model="form.jwd"
+            disabled
+            placeholder="点击右侧按钮查看地图"
+          >
+            <el-button
+              slot="append"
+              icon="el-icon-search"
+              @click="showBMap"
+            ></el-button>
+          </el-input>
         </el-form-item>
         <el-form-item label="图片" prop="image">
           <el-upload
@@ -90,6 +100,30 @@
           >取消</el-button
         >
         <el-button type="success" size="mini" @click="confirmSave"
+          >确定</el-button
+        >
+      </div>
+    </el-dialog>
+    <!-- 百度地图 -->
+    <el-dialog
+      :visible.sync="map.visible"
+      :modal="false"
+      width="50%"
+      :close-on-click-modal="false"
+    >
+      <div slot="title">
+        <i class="el-icon-document"></i>
+        <span>地图</span>
+      </div>
+      <div id="bmap" ref="bmap" style="height: 600px; width:100%"></div>
+      <div slot="footer">
+        <div style="float: left;line-height:28px;">
+          当前经纬度： {{ map.jwd }}
+        </div>
+        <el-button type="info" size="mini" @click="map.visible = false"
+          >取消</el-button
+        >
+        <el-button type="success" size="mini" @click="confirmJwd"
           >确定</el-button
         >
       </div>
@@ -119,7 +153,11 @@ export default {
         jwd: [{ required: true, message: "请填写经纬度", trigger: "blur" }],
         image: [{ required: true, message: "请上传图片", trigger: "blur" }]
       },
-      file: null //上传的文件
+      file: null, //上传的文件,
+      map: {
+        visible: false,
+        jwd: ""
+      }
     };
   },
   computed: {
@@ -128,6 +166,25 @@ export default {
     }
   },
   methods: {
+    showBMap() {
+      this.map.visible = true;
+      this.$nextTick(() => {
+        let map = new window.BMap.Map("bmap"); // 创建Map实例
+        map.centerAndZoom(new window.BMap.Point(116.297047, 39.979542), 11); // 初始化地图,设置中心点坐标和地图级别
+        map.addControl(new window.BMap.MapTypeControl());
+        map.centerAndZoom("成都"); // 设置地图显示的城市 此项是必须设置的
+        map.enableScrollWheelZoom(true); // 开启鼠标滚轮缩放
+        map.addEventListener("click", e => this.setJwd(e));
+      });
+    },
+    setJwd(address) {
+      /* "经度:" + e.point.lng + " , 纬度: " + e.point.lat */
+      this.map.jwd = address.point.lng + "," + address.point.lat;
+    },
+    confirmJwd() {
+      this.form.jwd = this.map.jwd;
+      this.map.visible = false;
+    },
     beforeUpload(file) {
       const { name } = file;
       const type = name.slice(name.lastIndexOf(".") + 1);
