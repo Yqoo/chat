@@ -2,7 +2,7 @@
   <div class="comp-register">
     <p class="title"><i class="el-icon-service"></i>客服管理</p>
     <el-table
-      :data="tableData"
+      :data="table.data"
       size="mini"
       ref="table"
       style="width:100%"
@@ -10,7 +10,11 @@
     >
       <el-table-column label="姓名" prop="name"></el-table-column>
       <el-table-column label="账号" prop="account"></el-table-column>
-      <el-table-column label="密码" prop="password"></el-table-column>
+      <el-table-column label="密码" prop="password">
+        <template>
+          <span>******</span>
+        </template>
+      </el-table-column>
       <el-table-column width="200px" fixed="right">
         <template slot="header">
           <div style="display: flex">
@@ -42,6 +46,11 @@
         </template>
       </el-table-column>
     </el-table>
+    <el-pagination
+      :page-size="10"
+      layout="prev, pager, next, jumper"
+      :total="1000"
+    />
     <!-- 客服 -->
     <el-dialog
       :visible.sync="form.visible"
@@ -79,6 +88,12 @@
             prefix-icon="el-icon-lock"
           ></el-input>
         </el-form-item>
+        <el-form-item label="权限" prop="userType">
+          <el-radio-group v-model="form.data.userType" size="mini">
+            <el-radio :label="0" border>普通人员</el-radio>
+            <el-radio :label="1" border>管理人员</el-radio>
+          </el-radio-group>
+        </el-form-item>
       </el-form>
       <div slot="footer">
         <el-button type="info" size="mini" @click="form.visible = false"
@@ -97,14 +112,20 @@ export default {
   name: "Register",
   data() {
     return {
-      tableData: [],
+      table: {
+        data: [],
+        total: 0,
+        size: 10,
+        current: 1
+      },
       search: "",
       form: {
         visible: false,
         data: {
           name: "",
           account: "",
-          password: ""
+          password: "",
+          userType: 0
         },
         rules: {
           name: [{ required: true, message: "请填写姓名", trigger: "blur" }],
@@ -116,8 +137,18 @@ export default {
   },
   computed: {
     tHeight() {
-      return document.body.clientHeight - 200;
+      return document.body.clientHeight - 150;
     }
+  },
+  created() {
+    const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+    const url = `userController/pageList?name=${userInfo.name}&account=${userInfo.account}&current=1&size=10`;
+    this.axios.get(url).then(s => {
+      if (s.data.status === 200) {
+        const data = s.data;
+        this.table.data = data.data.records;
+      } else this.$message.error(s.msg);
+    });
   },
   methods: {
     tableRowHandler(data, type) {
@@ -141,8 +172,12 @@ export default {
       this.$refs.form.validate(valid => {
         if (valid) {
           const params = Object.assign({}, this.form.data);
-          this.tableData.push(params);
-          this.form.visible = false;
+          const url = `userController/logaddin?name=${params.name}&account=${params.account}&password=${params.password}&userType=${params.userType}`;
+          this.axios.get(url).then(s => {
+            console.log(s);
+          });
+          /*  this.tableData.push(params);
+          this.form.visible = false; */
         }
       });
     },

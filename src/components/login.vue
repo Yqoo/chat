@@ -12,22 +12,22 @@
         ref="form"
         label-width="0px"
       >
-        <el-form-item label="">
+        <el-form-item label="" prop="account">
           <el-input
             v-model="form.account"
             prefix-icon="el-icon-user-solid"
           ></el-input>
         </el-form-item>
-        <el-form-item label="">
+        <el-form-item label="" prop="password">
           <el-input
             v-model="form.password"
             prefix-icon="el-icon-lock"
+            type="password"
           ></el-input>
         </el-form-item>
       </el-form>
       <div class="btns">
         <el-button type="success" size="small" @click="login">登录</el-button>
-        <el-button type="primary" size="small">注册</el-button>
       </div>
     </div>
   </div>
@@ -44,22 +44,40 @@ export default {
         account: "",
         password: ""
       },
-      rules: {}
+      rules: {
+        account: [{ required: true, message: "请填写账号", trigger: "blur" }],
+        password: [{ required: true, message: "请填写密码", trigger: "blur" }]
+      }
     };
   },
   methods: {
     login() {
-      this.axios
-        .get("/userController/login?account=ces1&password=123456")
-        .then(s => {
-          if (s.data.status === 200) {
-            localStorage.setItem("Token", new Date().getTime());
-            this.$router.push({
-              path: "/"
-            });
-          }
-        })
-        .catch(e => console.log(e));
+      this.$refs.form.validate(valid => {
+        if (valid) {
+          this.axios
+            .get(
+              `/userController/login?account=${this.form.account}&password=${this.form.password}`
+            )
+            .then(s => {
+              if (s.data.status === 200) {
+                const { user } = s.data.data;
+                localStorage.setItem("Token", new Date().getTime());
+                localStorage.setItem(
+                  "userInfo",
+                  JSON.stringify({
+                    id: user.id,
+                    account: user.account,
+                    name: user.name
+                  })
+                );
+                this.$router.push({
+                  path: "/"
+                });
+              } else this.$message.error(s.data.msg);
+            })
+            .catch(e => console.log(e));
+        }
+      });
     }
   }
 };
@@ -97,7 +115,7 @@ export default {
     margin: 0px 20px;
     text-align: center;
     .el-button {
-      width: 50%;
+      width: 100%;
     }
   }
 }

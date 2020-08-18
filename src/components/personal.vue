@@ -19,27 +19,33 @@
       </p>
       <div class="avatar">
         <el-avatar :src="avatar"></el-avatar>
-        <p>Admin</p>
+        <p>{{ form.name }}</p>
       </div>
-      <el-form :model="form" :rules="rules" size="mini" label-width="45px">
+      <el-form
+        :model="form"
+        ref="form"
+        :rules="rules"
+        size="mini"
+        label-width="60px"
+      >
         <el-form-item label="姓名" prop="name">
           <el-input v-model="form.name" :disabled="notEdit"></el-input>
         </el-form-item>
         <el-form-item label="账号" prop="account">
-          <el-input v-model="form.account" :disabled="notEdit"></el-input>
+          <el-input v-model="form.account" disabled></el-input>
         </el-form-item>
-        <el-form-item label="密码" prop="password">
-          <el-input
-            type="password"
-            v-model="form.password"
-            :disabled="notEdit"
-          ></el-input>
+        <el-form-item label="旧密码" prop="password" v-if="!notEdit">
+          <el-input type="password" v-model="form.password"></el-input>
+        </el-form-item>
+        <el-form-item label="新密码" prop="newPassword" v-if="!notEdit">
+          <el-input type="password" v-model="form.newPassword"></el-input>
         </el-form-item>
         <el-button
           v-show="!notEdit"
           style="width: 100%"
           type="success"
           size="mini"
+          @click="saveUserInfo"
           >保存</el-button
         >
       </el-form>
@@ -55,17 +61,52 @@ export default {
     return {
       avatar,
       form: {
-        name: "super admin",
-        account: "Admin",
-        password: "123456"
+        name: "",
+        account: "",
+        password: "",
+        newPassword: ""
       },
       rules: {
         name: [{ required: true, message: "请填写姓名", trigger: "blur" }],
-        account: [{ required: true, message: "请填写账号", trigger: "blur" }],
-        password: [{ required: true, message: "请填写密码", trigger: "blur" }]
+        password: [{ required: true, message: "请填写密码", trigger: "blur" }],
+        newPassword: [
+          { required: true, message: "请填写新密码", trigger: "blur" }
+        ]
       },
       notEdit: true
     };
+  },
+  created() {
+    const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+    this.form.name = userInfo.name;
+    this.form.account = userInfo.account;
+  },
+  methods: {
+    saveUserInfo() {
+      this.$refs.form.validate(valid => {
+        if (valid) {
+          const url = `userController/update?password=${this.form.password}&newPassword=${this.form.newPassword}&newname=${this.form.name}&account=${this.form.account}`;
+          this.axios
+            .get(url)
+            .then(s => {
+              const { data } = s;
+              if (data.status === 200) {
+                this.$message.success("保存成功");
+                this.notEdit = true;
+                localStorage.setItem(
+                  "userInfo",
+                  JSON.stringify({
+                    id: data.data.id,
+                    account: data.data.account,
+                    name: data.data.name
+                  })
+                );
+              } else this.$message.error(data.msg);
+            })
+            .catch(e => console.log(e));
+        }
+      });
+    }
   }
 };
 </script>

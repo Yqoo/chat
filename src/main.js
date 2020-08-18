@@ -22,8 +22,8 @@ router.beforeEach((to, from, next) => {
     if (token === null || token === "") {
       next({ path: "/login" });
     } else {
-      let obj = JSON.parse(token);
-      if (new Date().getTime() - obj.time > 1000 * 60 * 60 * 24) {
+      let time = JSON.parse(token);
+      if (new Date().getTime() - time > 1000 * 60 * 60 * 24) {
         //过期时间为1天
         next({ path: "/login" });
       } else {
