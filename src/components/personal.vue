@@ -86,24 +86,24 @@ export default {
       this.$refs.form.validate(valid => {
         if (valid) {
           const url = `userController/update?password=${this.form.password}&newPassword=${this.form.newPassword}&newname=${this.form.name}&account=${this.form.account}`;
-          this.axios
+          this.$http
             .get(url)
             .then(s => {
               const { data } = s;
-              if (data.status === 200) {
+              if (s.status === 200) {
                 this.$message.success("保存成功");
                 this.notEdit = true;
                 localStorage.setItem(
                   "userInfo",
                   JSON.stringify({
-                    id: data.data.id,
-                    account: data.data.account,
-                    name: data.data.name
+                    id: data.id,
+                    account: data.account,
+                    name: data.name
                   })
                 );
-              } else this.$message.error(data.msg);
+              } else this.$message.error(s.msg);
             })
-            .catch(e => console.log(e));
+            .catch(e => this.$message.error(e.msg));
         }
       });
     }

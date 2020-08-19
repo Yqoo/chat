@@ -54,28 +54,26 @@ export default {
     login() {
       this.$refs.form.validate(valid => {
         if (valid) {
-          this.axios
+          this.$http
             .get(
               `/userController/login?account=${this.form.account}&password=${this.form.password}`
             )
             .then(s => {
-              if (s.data.status === 200) {
-                const { user } = s.data.data;
-                localStorage.setItem("Token", new Date().getTime());
-                localStorage.setItem(
-                  "userInfo",
-                  JSON.stringify({
-                    id: user.id,
-                    account: user.account,
-                    name: user.name
-                  })
-                );
-                this.$router.push({
-                  path: "/"
-                });
-              } else this.$message.error(s.data.msg);
+              const { user } = s.data;
+              localStorage.setItem("Token", new Date().getTime());
+              localStorage.setItem(
+                "userInfo",
+                JSON.stringify({
+                  id: user.id,
+                  account: user.account,
+                  name: user.name
+                })
+              );
+              this.$router.push({
+                path: "/"
+              });
             })
-            .catch(e => console.log(e));
+            .catch(e => this.$message.error(e.msg));
         }
       });
     }

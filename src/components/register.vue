@@ -47,9 +47,10 @@
       </el-table-column>
     </el-table>
     <el-pagination
-      :page-size="10"
       layout="prev, pager, next, jumper"
-      :total="1000"
+      :total="table.total"
+      @current-change="curChange"
+      :page-sizes="[1]"
     />
     <!-- 客服 -->
     <el-dialog
@@ -61,7 +62,7 @@
     >
       <div slot="title">
         <i class="el-icon-document"></i>
-        <span>添加客服</span>
+        <span>{{ form.statu ? "修改" : "添加" }}客服</span>
       </div>
       <el-form
         :model="form.data"
@@ -80,6 +81,7 @@
           <el-input
             v-model="form.data.account"
             prefix-icon="el-icon-user"
+            :disabled="form.statu ? true : false"
           ></el-input>
         </el-form-item>
         <el-form-item label="密码" prop="password">
@@ -112,15 +114,17 @@ export default {
   name: "Register",
   data() {
     return {
+      userInfo: null,
       table: {
         data: [],
         total: 0,
-        size: 10,
+        size: 30,
         current: 1
       },
       search: "",
       form: {
         visible: false,
+        statu: 0,
         data: {
           name: "",
           account: "",
@@ -132,7 +136,8 @@ export default {
           account: [{ required: true, message: "请填写账号", trigger: "blur" }],
           password: [{ required: true, message: "请填写密码", trigger: "blur" }]
         }
-      }
+      },
+      row: null
     };
   },
   computed: {
@@ -141,14 +146,8 @@ export default {
     }
   },
   created() {
-    const userInfo = JSON.parse(localStorage.getItem("userInfo"));
-    const url = `userController/pageList?name=${userInfo.name}&account=${userInfo.account}&current=1&size=10`;
-    this.axios.get(url).then(s => {
-      if (s.data.status === 200) {
-        const data = s.data;
-        this.table.data = data.data.records;
-      } else this.$message.error(s.msg);
-    });
+    this.userInfo = JSON.parse(localStorage.getItem("userInfo"));
+    this.getPage();
   },
   methods: {
     tableRowHandler(data, type) {
@@ -164,6 +163,16 @@ export default {
               this.tableData.splice($index, 1);
             })
             .catch(e => e);
+        },
+        update: () => {
+          this.form.statu = 1;
+          const { row } = data;
+          this.row = row;
+          this.form.data.name = row.name;
+          this.form.data.account = row.account;
+          this.form.data.userType = row.userType;
+          this.form.data.password = "";
+          this.form.visible = true;
         }
       };
       activeds[type]();
@@ -172,12 +181,20 @@ export default {
       this.$refs.form.validate(valid => {
         if (valid) {
           const params = Object.assign({}, this.form.data);
-          const url = `userController/logaddin?name=${params.name}&account=${params.account}&password=${params.password}&userType=${params.userType}`;
-          this.axios.get(url).then(s => {
-            console.log(s);
-          });
-          /*  this.tableData.push(params);
-          this.form.visible = false; */
+          let url = "";
+          if (this.form.statu)
+            url = `userController/adminUpdate?id=${this.row.id}&`;
+          else url = `userController/add?`;
+          const compliteUrl = `${url}name=${params.name}&account=${params.account}&password=${params.password}&userType=${params.userType}`;
+          this.$http
+            .get(compliteUrl)
+            .then(s => {
+              const Row = Object.assign({}, s.data);
+              this.form.statu ? this.getPage() : this.table.data.push(Row);
+              this.$message.success("保存成功");
+              this.form.visible = false;
+            })
+            .catch(e => this.$message.error(e.msg));
         }
       });
     },
@@ -187,6 +204,20 @@ export default {
         account: "",
         password: ""
       });
+    },
+    getPage() {
+      const url = `userController/pageList?current=${this.table.current}&size=${this.table.size}`;
+      this.$http
+        .get(url)
+        .then(s => {
+          const { records } = s.data;
+          this.table.data = records;
+          this.table.total = records.length;
+        })
+        .catch(e => this.$message.error(e.msg));
+    },
+    curChange(cur) {
+      console.log(cur);
     },
     addRow() {
       this.form.visible = true;
@@ -207,15 +238,5 @@ export default {
     padding-left: 20px;
     color: #409eff;
   }
-  /* .main {
-    position: absolute;
-    width: 400px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    padding: 20px;
-    top: 40%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-  } */
 }
 </style>
