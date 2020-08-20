@@ -17,7 +17,28 @@
           <div class="header" style="border-top-right-radius: 10px;">
             用户{{ user }}
           </div>
-          <div class="body"></div>
+          <div class="body" id="chartBody">
+            <div
+              v-for="(item, index) in chartList"
+              :key="index"
+              :class="{
+                right: item.isKf,
+                left: !item.isKf
+              }"
+            >
+              <el-avatar :src="image" v-if="!item.isKf"></el-avatar>
+              <p :class="{ right: item.isKf, left: !item.isKf }">
+                {{ item.content }}
+              </p>
+              <el-avatar :src="image" v-if="item.isKf"></el-avatar>
+            </div>
+           <!--  <div class="right">
+              <el-avatar :src="image"></el-avatar>
+              <p class="right">
+                xxxxxxxxxxxxxxxxxxxx
+              </p>
+            </div> -->
+          </div>
           <div class="footer">
             <el-input
               type="textarea"
@@ -31,6 +52,7 @@
                   size="mini"
                   icon="el-icon-picture"
                   title="发送图片"
+                  @click="mockyh"
                 ></el-button>
               </div>
               <div style="margin-top:10px">
@@ -39,6 +61,7 @@
                   size="mini"
                   icon="el-icon-position"
                   title="发送"
+                  @click="send"
                 ></el-button>
               </div>
             </div>
@@ -50,19 +73,48 @@
 </template>
 
 <script>
+import image from "@/assets/image/user.gif";
 export default {
   name: "Chat",
   data() {
     return {
       user: "xxx",
+      image,
       kf: {
         targetChat: ""
-      }
+      },
+      chartList: [
+        { isKf: false, content: "xxxxx" },
+        { isKf: false, content: "xxxxx" },
+        { isKf: true, content: "xxxxx" },
+        { isKf: false, content: "xxxxx" },
+        { isKf: false, content: "xxxxx" },
+        { isKf: true, content: "xxxxx" }
+      ]
     };
+  },
+  watch: {
+    "chartList.length"() {
+      let ele = document.getElementById("chartBody");
+      console.log(ele.lastChild);
+      ele.scrollTop = ele.scrollHeight;
+    }
   },
   methods: {
     setUser(user) {
       this.user = user;
+    },
+    send() {
+      this.chartList.push({
+        isKf: true,
+        content: this.kf.targetChat
+      });
+    },
+    mockyh() {
+      this.chartList.push({
+        isKf: false,
+        content: this.kf.targetChat
+      });
     }
   }
 };
@@ -127,6 +179,56 @@ export default {
     }
     .body {
       height: calc(70vh - 128px);
+      padding: 0px 10px;
+      overflow-y: auto;
+      div {
+        .el-avatar {
+          height: 30px;
+          width: 30px;
+          vertical-align: top;
+        }
+      }
+      div.left {
+        text-align: left;
+      }
+      div.right {
+        text-align: right;
+      }
+      div p {
+        background-color: #fff;
+        padding: 5px 8px;
+        display: inline-block;
+        border-radius: 6px;
+        position: relative;
+        max-width: 50%;
+        word-wrap: break-word;
+        color: #fff;
+      }
+      div p.left {
+        background: green;
+        margin: 5px 0 10px 10px;
+      }
+      div p.right {
+        background: #409eff;
+        margin: 5px 10px 10px 0px;
+      }
+      div p::after {
+        content: "";
+        border: 8px solid #ffffff00;
+        position: absolute;
+        top: 5px;
+      }
+      div p.left::after {
+        border-right: 8px solid green;
+        left: -16px;
+      }
+      div p.right::after {
+        border-left: 8px solid #409eff;
+        right: -16px;
+      }
+    }
+    .body::-webkit-scrollbar {
+      display: none;
     }
     .footer {
       display: flex;
