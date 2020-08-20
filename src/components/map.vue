@@ -10,6 +10,7 @@
     >
       <el-table-column label="名称" prop="name"></el-table-column>
       <el-table-column label="描述" prop="desc"></el-table-column>
+      <el-table-column label="地址" prop="address"></el-table-column>
       <el-table-column label="经纬度" prop="jwd"></el-table-column>
       <el-table-column label="图片" prop="image"></el-table-column>
       <el-table-column label="管理" width="200px" fixed="right">
@@ -68,6 +69,9 @@
         </el-form-item>
         <el-form-item label="描述" prop="desc">
           <el-input v-model="form.desc"></el-input>
+        </el-form-item>
+        <el-form-item label="地址" prop="address">
+          <el-input v-model="form.address"></el-input>
         </el-form-item>
         <el-form-item label="经纬度" prop="jwd">
           <el-input
@@ -144,12 +148,14 @@ export default {
       form: {
         name: "",
         desc: "",
+        address: "",
         jwd: "",
         image: ""
       },
       rules: {
         name: [{ required: true, message: "请填写名称", trigger: "blur" }],
         desc: [{ required: true, message: "请填写描述", trigger: "blur" }],
+        address: [{ required: true, message: "请填写地址", trigger: "blur" }],
         jwd: [{ required: true, message: "请填写经纬度", trigger: "blur" }],
         image: [{ required: true, message: "请上传图片", trigger: "blur" }]
       },
@@ -164,6 +170,16 @@ export default {
     tHeight() {
       return document.body.clientHeight - 200;
     }
+  },
+  created() {
+    this.$http
+      .get(
+        "/storefrontsController/pageList?name=''&address=''&current=1&size=30"
+      )
+      .then(s => {
+        console.log(s);
+      })
+      .catch(e => console.log(e));
   },
   methods: {
     showBMap() {

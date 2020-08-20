@@ -10,19 +10,25 @@
     >
       <el-table-column label="姓名" prop="name"></el-table-column>
       <el-table-column label="账号" prop="account"></el-table-column>
-      <el-table-column label="密码" prop="password">
-        <template>
-          <span>******</span>
+      <el-table-column label="权限" prop="userType">
+        <template slot-scope="scope">
+          {{ scope.row.userType ? "管理人员" : "普通人员" }}
         </template>
       </el-table-column>
-      <el-table-column width="200px" fixed="right">
-        <template slot="header">
+      <el-table-column width="250px" fixed="right">
+        <template slot="header" slot-scope="scope">
           <div style="display: flex">
             <el-input
               v-model="search"
-              placeholder="键入关键词回车搜索"
+              placeholder="回车搜索"
               prefix-icon="el-icon-search"
-            ></el-input>
+              @keyup.enter.native="searchSth(scope)"
+            >
+              <el-select v-model="sType" slot="prepend" style="width:90px">
+                <el-option label="姓名" value="name"></el-option>
+                <el-option label="账号" value="account"></el-option>
+              </el-select>
+            </el-input>
             <el-button
               type="text"
               size="mini"
@@ -50,7 +56,6 @@
       layout="prev, pager, next, jumper"
       :total="table.total"
       @current-change="curChange"
-      :page-sizes="[1]"
     />
     <!-- 客服 -->
     <el-dialog
@@ -118,10 +123,11 @@ export default {
       table: {
         data: [],
         total: 0,
-        size: 30,
+        size: 2,
         current: 1
       },
       search: "",
+      sType: "name",
       form: {
         visible: false,
         statu: 0,
@@ -147,9 +153,19 @@ export default {
   },
   created() {
     this.userInfo = JSON.parse(localStorage.getItem("userInfo"));
-    this.getPage();
+    this.getPage({
+      cur: this.table.current,
+      size: this.table.size
+    });
   },
   methods: {
+    searchSth() {
+      this.getPage({
+        [this.sType]: this.search,
+        cur: this.table.current,
+        size: this.table.size
+      });
+    },
     tableRowHandler(data, type) {
       const activeds = {
         del: () => {
@@ -205,8 +221,8 @@ export default {
         password: ""
       });
     },
-    getPage() {
-      const url = `userController/pageList?current=${this.table.current}&size=${this.table.size}`;
+    getPage({ name = "", account = "", cur, size }) {
+      const url = `userController/pageList?name=${name}&account=${account}&current=${cur}&size=${size}`;
       this.$http
         .get(url)
         .then(s => {

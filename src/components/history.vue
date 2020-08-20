@@ -2,7 +2,7 @@
   <div class="comp-history">
     <p class="title"><i class="el-icon-chat-dot-square"></i>聊天记录</p>
     <el-table
-      :data="tableData"
+      :data="table.data"
       size="mini"
       ref="table"
       style="width:100%;"
@@ -18,7 +18,7 @@
             prefix-icon="el-icon-search"
             size="mini"
             placeholder="键入关键词回车搜索"
-            v-model="search"
+            v-model="table.search"
           ></el-input>
         </template>
       </el-table-column>
@@ -31,13 +31,33 @@ export default {
   name: "History",
   data() {
     return {
-      tableData: [],
-      search: ""
+      table: {
+        data: [],
+        total: 0,
+        size: 30,
+        current: 1,
+        search: ""
+      }
     };
   },
   computed: {
     tHeight() {
       return document.body.clientHeight - 200;
+    }
+  },
+  created() {
+    this.getPage({ cur: 1, size: 30 });
+  },
+  methods: {
+    getPage({ phone = "", id = "", name = "", cur, size }) {
+      /* /imRecordsController/pageList?userPhone&kefuId&kefuName&current&size */
+      const url = `imRecordsController/pageList?userPhone=${phone}&kefuId=${id}&kefuName=${name}&current=${cur}&size=${size}`;
+      this.$http
+        .get(url)
+        .then(s => {
+          console.log(s);
+        })
+        .catch(e => this.$message.error(e.msg));
     }
   }
 };
