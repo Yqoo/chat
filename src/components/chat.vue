@@ -96,8 +96,9 @@ export default {
   watch: {
     "chartList.length"() {
       let ele = document.getElementById("chartBody");
-      console.log(ele.lastChild);
-      ele.scrollTop = ele.scrollHeight;
+      this.$nextTick(() => {
+        ele.scrollTop = ele.scrollHeight;
+      });
     }
   },
   methods: {
