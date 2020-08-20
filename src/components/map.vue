@@ -2,26 +2,41 @@
   <div class="comp-map">
     <p class="title"><i class="el-icon-map-location"></i>地图管理</p>
     <el-table
-      :data="tableData"
+      :data="table.data"
       size="mini"
       ref="table"
       style="width:100%;"
       :height="tHeight"
     >
       <el-table-column label="名称" prop="name"></el-table-column>
-      <el-table-column label="描述" prop="desc"></el-table-column>
+      <el-table-column label="描述" prop="describes"></el-table-column>
       <el-table-column label="地址" prop="address"></el-table-column>
-      <el-table-column label="经纬度" prop="jwd"></el-table-column>
+      <el-table-column label="经纬度" prop="jwd" show-overflow-tooltip>
+        <template slot-scope="scope">
+          {{ scope.row.longitude + "," + scope.row.latitude }}
+        </template>
+      </el-table-column>
       <el-table-column label="图片" prop="image"></el-table-column>
-      <el-table-column label="管理" width="200px" fixed="right">
-        <template slot="header">
+      <el-table-column label="状态" prop="status">
+        <template slot-scope="scope">
+          {{ scope.row.status ? "启用" : "停用" }}
+        </template>
+      </el-table-column>
+      <el-table-column label="管理" width="250px" fixed="right">
+        <template slot="header" slot-scope="scope">
           <div style="display:flex;flex-flow:row nowrap">
             <el-input
               prefix-icon="el-icon-search"
               size="mini"
-              placeholder="键入关键词回车搜索"
-              v-model="search"
-            ></el-input>
+              placeholder="回车搜索"
+              v-model="table.search"
+              @keyup.enter.native="searchSth(scope)"
+            >
+              <el-select v-model="sType" slot="prepend" style="width:90px">
+                <el-option label="姓名" value="name"></el-option>
+                <el-option label="地址" value="address"></el-option>
+              </el-select>
+            </el-input>
             <el-button
               type="text"
               icon="el-icon-circle-plus"
@@ -44,6 +59,12 @@
         </template>
       </el-table-column>
     </el-table>
+    <el-pagination
+      layout="prev, pager, next, jumper"
+      :total="table.total"
+      :page-size="table.size"
+      @current-change="curChange"
+    />
 
     <!-- 添加|修改行 -->
     <el-dialog
@@ -55,7 +76,7 @@
     >
       <div slot="title">
         <i class="el-icon-document"></i>
-        <span>添加</span>
+        <span>{{ row.statu === "add" ? "添加" : "编辑" }}商家</span>
       </div>
       <el-form
         :model="form"
@@ -67,8 +88,8 @@
         <el-form-item label="名称" prop="name">
           <el-input v-model="form.name"></el-input>
         </el-form-item>
-        <el-form-item label="描述" prop="desc">
-          <el-input v-model="form.desc"></el-input>
+        <el-form-item label="描述" prop="describes">
+          <el-input v-model="form.describes"></el-input>
         </el-form-item>
         <el-form-item label="地址" prop="address">
           <el-input v-model="form.address"></el-input>
@@ -97,6 +118,12 @@
           >
             <el-input v-model="form.image"></el-input>
           </el-upload>
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="form.status" size="mini">
+            <el-radio :label="0" border>停用</el-radio>
+            <el-radio :label="1" border>启用</el-radio>
+          </el-radio-group>
         </el-form-item>
       </el-form>
       <div slot="footer">
@@ -136,21 +163,30 @@
 </template>
 
 <script>
+import qs from "qs";
 export default {
   name: "Map",
   data() {
     return {
-      tableData: [],
-      search: "",
+      table: {
+        data: [],
+        size: 30,
+        current: 1,
+        total: 0,
+        search: ""
+      },
       row: {
-        visible: false
+        visible: false,
+        statu: "add",
+        data: null
       },
       form: {
         name: "",
-        desc: "",
+        describes: "",
         address: "",
         jwd: "",
-        image: ""
+        image: "",
+        status: 0
       },
       rules: {
         name: [{ required: true, message: "请填写名称", trigger: "blur" }],
@@ -163,23 +199,17 @@ export default {
       map: {
         visible: false,
         jwd: ""
-      }
+      },
+      sType: "name"
     };
   },
   computed: {
     tHeight() {
-      return document.body.clientHeight - 200;
+      return document.body.clientHeight - 150;
     }
   },
   created() {
-    this.$http
-      .get(
-        "/storefrontsController/pageList?name=''&address=''&current=1&size=30"
-      )
-      .then(s => {
-        console.log(s);
-      })
-      .catch(e => console.log(e));
+    this.getPage({ current: this.table.current, size: this.table.size });
   },
   methods: {
     showBMap() {
@@ -210,8 +240,8 @@ export default {
         : this.$message.warning("请上传格式为png/jpg的图片");
       return flag;
     },
-    upload(file) {
-      console.log(file);
+    upload(params) {
+      this.file = params.file;
     },
     tableRowHandler(data, type) {
       const activeds = {
@@ -226,9 +256,28 @@ export default {
               this.tableData.splice($index, 1);
             })
             .catch(e => e);
+        },
+        update: () => {
+          const { row } = data;
+          this.row.data = row;
+          this.form.name = row.name;
+          this.form.describes = row.describes;
+          this.form.address = row.address;
+          this.form.status = row.status;
+          this.form.image = row.image;
+          this.form.jwd = row.longitude + "," + row.latitude;
+          this.row.statu = "update";
+          this.row.visible = true;
         }
       };
       activeds[type]();
+    },
+    searchSth() {
+      this.getPage({
+        [this.sType]: this.table.search,
+        current: this.table.current,
+        size: this.table.size
+      });
     },
     addRow() {
       this.row.visible = true;
@@ -236,11 +285,15 @@ export default {
     formClose() {
       Object.assign(this.form, {
         name: "",
-        desc: "",
+        describes: "",
+        address: "",
         jwd: "",
-        image: ""
+        image: "",
+        status: 0
       });
       this.file = null;
+      this.row.statu = "add";
+      this.row.data = null;
     },
     confirmSave() {
       this.$refs.form.validate(valid => {
@@ -248,13 +301,56 @@ export default {
           let fd = new FormData();
           const row = Object.assign({}, this.form);
           fd.append("name", row.name);
-          fd.append("desc", row.desc);
-          fd.append("jwd", row.jwd);
+          fd.append("describes", row.describes);
+          fd.append("address", row.address);
+          fd.append("longitude", row.jwd.split(",")[0]);
+          fd.append("latitude", row.jwd.split(",")[1]);
           fd.append("image", this.file);
-          this.tableData.push(row);
-          this.row.visible = false;
+          if (this.row.statu === "update") fd.append("id", this.row.data.id);
+          const url =
+            this.row.statu === "add"
+              ? "/storefrontsController/add"
+              : "/storefrontsController/update";
+          this.$http
+            .post(url, fd)
+            .then(s => {
+              const Row = Object.assign({}, s.data);
+              this.row.statu === "update"
+                ? this.getPage({
+                    current: this.table.current,
+                    size: this.table.size
+                  })
+                : this.table.data.push(Row);
+              this.$message.success("保存成功");
+              this.row.visible = false;
+            })
+            .catch(e => this.$message.error(e.msg));
         }
       });
+    },
+    curChange(cur) {
+      this.table.current = cur;
+      this.getPage({
+        current: cur,
+        size: this.table.size
+      });
+    },
+    getPage({ name = "", address = "", current, size }) {
+      this.$http
+        .post(
+          "storefrontsController/pageList",
+          qs.stringify({
+            name,
+            address,
+            current,
+            size
+          })
+        )
+        .then(s => {
+          this.table.data = s.data.records;
+          this.table.total = s.data.total;
+        })
+        .catch(e => this.$message.error(e.msg));
     }
   }
 };

@@ -15,6 +15,7 @@
           {{ scope.row.userType ? "管理人员" : "普通人员" }}
         </template>
       </el-table-column>
+      <el-table-column label="状态" prop="statu"></el-table-column>
       <el-table-column width="250px" fixed="right">
         <template slot="header" slot-scope="scope">
           <div style="display: flex">
@@ -43,18 +44,13 @@
           <el-tag type="success" @click="tableRowHandler(scope, 'update')"
             >编辑</el-tag
           >
-          <el-tag
-            type="danger"
-            style="margin-left:5px;"
-            @click="tableRowHandler(scope, 'del')"
-            >删除</el-tag
-          >
         </template>
       </el-table-column>
     </el-table>
     <el-pagination
       layout="prev, pager, next, jumper"
       :total="table.total"
+      :page-size="table.size"
       @current-change="curChange"
     />
     <!-- 客服 -->
@@ -95,6 +91,10 @@
             prefix-icon="el-icon-lock"
           ></el-input>
         </el-form-item>
+        <el-form-item label="状态" prop="statu">
+          <el-radio v-model="form.data.statu" :label="1">启用</el-radio>
+          <el-radio v-model="form.data.statu" :label="0">停用</el-radio>
+        </el-form-item>
         <el-form-item label="权限" prop="userType">
           <el-radio-group v-model="form.data.userType" size="mini">
             <el-radio :label="0" border>普通人员</el-radio>
@@ -123,7 +123,7 @@ export default {
       table: {
         data: [],
         total: 0,
-        size: 2,
+        size: 30,
         current: 1
       },
       search: "",
@@ -135,7 +135,8 @@ export default {
           name: "",
           account: "",
           password: "",
-          userType: 0
+          userType: 0,
+          statu: 0
         },
         rules: {
           name: [{ required: true, message: "请填写姓名", trigger: "blur" }],
@@ -168,18 +169,6 @@ export default {
     },
     tableRowHandler(data, type) {
       const activeds = {
-        del: () => {
-          this.$confirm("确认删除当前数据？", "删除", {
-            confirmButtonText: "确定",
-            cancelButtonText: "取消",
-            type: "danger"
-          })
-            .then(() => {
-              const { $index } = data;
-              this.tableData.splice($index, 1);
-            })
-            .catch(e => e);
-        },
         update: () => {
           this.form.statu = 1;
           const { row } = data;
@@ -206,7 +195,12 @@ export default {
             .get(compliteUrl)
             .then(s => {
               const Row = Object.assign({}, s.data);
-              this.form.statu ? this.getPage() : this.table.data.push(Row);
+              this.form.statu
+                ? this.getPage({
+                    cur: this.table.current,
+                    size: this.table.size
+                  })
+                : this.table.data.push(Row);
               this.$message.success("保存成功");
               this.form.visible = false;
             })
@@ -220,6 +214,7 @@ export default {
         account: "",
         password: ""
       });
+      this.form.statu = 0;
     },
     getPage({ name = "", account = "", cur, size }) {
       const url = `userController/pageList?name=${name}&account=${account}&current=${cur}&size=${size}`;
@@ -228,12 +223,16 @@ export default {
         .then(s => {
           const { records } = s.data;
           this.table.data = records;
-          this.table.total = records.length;
+          this.table.total = s.data.total;
         })
         .catch(e => this.$message.error(e.msg));
     },
     curChange(cur) {
-      console.log(cur);
+      this.table.current = cur;
+      this.getPage({
+        cur,
+        size: this.table.size
+      });
     },
     addRow() {
       this.form.visible = true;

@@ -7,7 +7,7 @@
           <span v-if="!isCollapse">MyChat</span>
         </div>
         <el-menu
-          :default-active="comp"
+          default-active="chat"
           class="el-menu-vertical-demo"
           background-color="rgba(48,65,86,1)"
           text-color="#fff"
@@ -77,15 +77,13 @@ export default {
   name: "Home",
   data() {
     return {
-      isCollapse: false,
-      comp: "chat"
+      isCollapse: false
     };
   },
   methods: {
     handleCommand(command) {
       const actived = {
         userInfo: () => {
-          this.comp = "";
           this.$router.push({
             path: "/personal"
           });

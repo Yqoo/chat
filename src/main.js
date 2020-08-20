@@ -8,7 +8,7 @@ import http from "@/assets/js/http.js";
 Vue.prototype.$http = http;
 Vue.config.productionTip = false;
 Vue.use(ElementUI, { size: "small", zIndex: 1000 });
-router.beforeEach((to, from, next) => {
+/* router.beforeEach((to, from, next) => {
   //全局路由守卫
   if (to.path === "/login") {
     next();
@@ -26,7 +26,7 @@ router.beforeEach((to, from, next) => {
       }
     }
   }
-});
+}); */
 
 new Vue({
   router,

@@ -60,7 +60,6 @@ export default {
             )
             .then(s => {
               const { user } = s.data;
-              localStorage.setItem("Token", new Date().getTime());
               localStorage.setItem(
                 "userInfo",
                 JSON.stringify({
