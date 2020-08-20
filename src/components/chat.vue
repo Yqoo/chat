@@ -18,7 +18,31 @@
             用户{{ user }}
           </div>
           <div class="body"></div>
-          <textarea class="footer"></textarea>
+          <div class="footer">
+            <el-input
+              type="textarea"
+              v-model="kf.targetChat"
+              :autosize="{ minRows: 4, maxRows: 4 }"
+            ></el-input>
+            <div>
+              <div style="margin-top:10px">
+                <el-button
+                  type="warning"
+                  size="mini"
+                  icon="el-icon-picture"
+                  title="发送图片"
+                ></el-button>
+              </div>
+              <div style="margin-top:10px">
+                <el-button
+                  type="success"
+                  size="mini"
+                  icon="el-icon-position"
+                  title="发送"
+                ></el-button>
+              </div>
+            </div>
+          </div>
         </el-col>
       </el-row>
     </div>
@@ -30,7 +54,10 @@ export default {
   name: "Chat",
   data() {
     return {
-      user: "xxx"
+      user: "xxx",
+      kf: {
+        targetChat: ""
+      }
     };
   },
   methods: {
@@ -99,14 +126,16 @@ export default {
       color: #fff;
     }
     .body {
-      height: calc(70vh - 170px);
-      border-bottom: 1px solid #ddd;
+      height: calc(70vh - 128px);
     }
     .footer {
-      height: 125px;
-      width: 100%;
-      border: none;
+      display: flex;
       box-sizing: border-box;
+      flex-flow: row nowrap;
+      justify-content: space-around;
+      .el-textarea {
+        width: 85%;
+      }
     }
   }
 }
