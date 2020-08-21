@@ -8,18 +8,18 @@
             聊天列表
           </div>
           <ul class="userList">
-            <li v-for="list in 100" :key="list" @click="setUser(list)">
+            <li v-for="list in allUser" :key="list" @click="setUser(list)">
               用户{{ list }}
             </li>
           </ul>
         </el-col>
         <el-col :span="18">
           <div class="header" style="border-top-right-radius: 10px;">
-            用户{{ user }}
+            {{ user }}
           </div>
           <div class="body" id="chartBody">
             <div
-              v-for="(item, index) in chartList"
+              v-for="(item, index) in targetChat"
               :key="index"
               :class="{
                 right: item.isKf,
@@ -32,12 +32,6 @@
               </p>
               <el-avatar :src="image" v-if="item.isKf"></el-avatar>
             </div>
-           <!--  <div class="right">
-              <el-avatar :src="image"></el-avatar>
-              <p class="right">
-                xxxxxxxxxxxxxxxxxxxx
-              </p>
-            </div> -->
           </div>
           <div class="footer">
             <el-input
@@ -78,43 +72,175 @@ export default {
   name: "Chat",
   data() {
     return {
-      user: "xxx",
+      user: "",
       image,
       kf: {
         targetChat: ""
       },
-      chartList: [
-        { isKf: false, content: "xxxxx" },
-        { isKf: false, content: "xxxxx" },
-        { isKf: true, content: "xxxxx" },
-        { isKf: false, content: "xxxxx" },
-        { isKf: false, content: "xxxxx" },
-        { isKf: true, content: "xxxxx" }
-      ]
+      allUser: [], // 所有已接入的用户
+      chartList: {}, // 当前客服接入的用户
+      websock: null
     };
   },
+  computed: {
+    targetChat() {
+      return this.chartList[this.user];
+    },
+    targetUserChatLength() {
+      return this.chartList[this.user] && this.chartList[this.user].length;
+    }
+  },
   watch: {
-    "chartList.length"() {
+    targetUserChatLength() {
       let ele = document.getElementById("chartBody");
       this.$nextTick(() => {
         ele.scrollTop = ele.scrollHeight;
       });
     }
   },
+  created() {
+    this.initWebSocket();
+    this.getConfigResult({
+      msgType: 2,
+      userPhone: "18215554225"
+    });
+  },
   methods: {
+    // websocket 初始化
+    initWebSocket() {
+      const token = sessionStorage.getItem("sessionId");
+      let ws = `ws://192.168.0.102:9876?access_token=${JSON.parse(
+        token
+      )}&loginType=system`;
+      this.websock = new WebSocket(ws);
+      this.websock.onmessage = e => {
+        this.websocketonmessage(e);
+      };
+      this.websock.onclose = e => {
+        this.websocketclose(e);
+      };
+      this.websock.onopen = () => {
+        this.websocketOpen();
+      };
+
+      // 连接发生错误的回调方法
+      this.websock.onerror = function() {
+        console.log("WebSocket连接发生错误");
+      };
+    },
+    // 实际调用的方法
+    sendSock(agentData) {
+      if (this.websock.readyState === this.websock.OPEN) {
+        // 若是ws开启状态
+        this.websocketsend(agentData);
+      } else if (this.websock.readyState === this.websock.CONNECTING) {
+        // 若是 正在开启状态，则等待1s后重新调用
+        setTimeout(() => {
+          this.sendSock(agentData);
+        }, 1000);
+      } else {
+        // 若未开启 ，则等待1s后重新调用
+        setTimeout(() => {
+          this.sendSock(agentData);
+        }, 1000);
+      }
+    },
+    // 数据接收 二进制文件处理
+    websocketonmessage(e) {
+      var reader = new FileReader();
+      if (e.data instanceof Blob) {
+        reader.readAsText(e.data, "UTF-8");
+        reader.onload = () => {
+          let str = JSON.parse(reader.result);
+          this.getConfigResult(str);
+        };
+      } else {
+        this.getConfigResult(JSON.parse(e.data));
+      }
+    },
+    // 数据发送
+    websocketsend(agentData) {
+      this.websock.send(JSON.stringify(agentData));
+    },
+    // 关闭
+    websocketclose(e) {
+      console.log("connection closed (" + e.code + ")");
+    },
+    // 创建 websocket 连接
+    websocketOpen() {
+      console.log("连接成功");
+    },
+    getConfigResult(res) {
+      /* 
+        接收处理后的数据
+        msgType: 0 新用户等待接入（后台）userWaitAccess
+                1 客服申请用户接入（后台）kfApplicationAccess
+                2 客服成功接入kfSuccessAccess
+                3 用户已被接入（用户端）userHasAccess
+                4 用户消息userMessage
+                5 客服消息kfMessage
+                6 系统通知（用户端）
+                7 系统通知（客服端）systemMessage
+                8 用户下线userOutLine
+                9 客服下线kfOutLine
+      */
+      const activeds = {
+        userWaitAccess: () => {
+          console.log(0);
+        },
+        kfApplicationAccess: () => {},
+        kfSuccessAccess: () => {
+          this.user = res.userPhone;
+          this.$set(this.chartList, res.userPhone, []);
+          this.allUser.push(res.userPhone);
+        },
+        userHasAccess: () => {
+          this.allUser.push(res.userPhone);
+        },
+        userMessage: () => {},
+        kfMessage: () => {},
+        systemMessage: () => {},
+        userOutLine: () => {},
+        kfOutLine: () => {}
+      };
+      const aMap = new Map([
+        [0, "userWaitAccess"],
+        [1, "kfApplicationAccess"],
+        [2, "kfSuccessAccess"],
+        [3, "userHasAccess"],
+        [4, "userMessage"],
+        [5, "kfMessage"],
+        [7, "systemMessage"],
+        [8, "userOutLine"],
+        [9, "kfOutLine"]
+      ]);
+      activeds[aMap.get(res.msgType)]();
+    },
+    websocketToLogin() {
+      const info = JSON.parse(localStorage.getItem("userInfo"));
+      this.sendSock({
+        userPhone: "18011502613",
+        kefuId: info.id,
+        kefuName: info.name,
+        msgType: 1,
+        context: ""
+      });
+    },
     setUser(user) {
       this.user = user;
     },
     send() {
-      this.chartList.push({
+      /* this.websocketToLogin(); */
+      this.chartList[this.user].push({
         isKf: true,
-        content: this.kf.targetChat
+        content: new Date().getTime() + "xx"
       });
+      console.log(this.chartList[this.user]);
     },
     mockyh() {
-      this.chartList.push({
-        isKf: false,
-        content: this.kf.targetChat
+      this.getConfigResult({
+        msgType: 2,
+        userPhone: new Date().getTime()
       });
     }
   }
@@ -225,7 +351,7 @@ export default {
       }
       div p.right::after {
         border-left: 8px solid #409eff;
-        right: -16px;
+        right: -15px;
       }
     }
     .body::-webkit-scrollbar {
