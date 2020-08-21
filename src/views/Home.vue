@@ -29,7 +29,7 @@
           </el-menu-item>
           <el-menu-item index="map">
             <i class="el-icon-map-location"></i>
-            <span slot="title">地图</span>
+            <span slot="title">商家管理</span>
           </el-menu-item>
         </el-menu>
       </el-col>
@@ -64,8 +64,13 @@
             </el-dropdown>
           </div>
         </div>
+        <!--   <el-tabs v-for="item in tab" :key="item.path">
+          <el-tab-pane></el-tab-pane>
+        </el-tabs> -->
         <transition name="slide-fade">
-          <router-view></router-view>
+          <keep-alive>
+            <router-view></router-view>
+          </keep-alive>
         </transition>
       </el-col>
     </el-row>
@@ -77,7 +82,11 @@ export default {
   name: "Home",
   data() {
     return {
-      isCollapse: false
+      isCollapse: false,
+      tab: {
+        list: [],
+        id: ""
+      }
     };
   },
   methods: {

@@ -68,6 +68,10 @@ export default {
                   name: user.name
                 })
               );
+              sessionStorage.setItem(
+                "sessionId",
+                JSON.stringify(s.data.sessionId)
+              );
               this.$router.push({
                 path: "/"
               });
