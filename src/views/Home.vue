@@ -89,6 +89,11 @@ export default {
       }
     };
   },
+  mounted() {
+    this.$router.push({
+      path: "/chat"
+    });
+  },
   methods: {
     handleCommand(command) {
       const actived = {

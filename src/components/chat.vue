@@ -1,6 +1,13 @@
 <template>
   <div class="comp-chat">
-    <p class="title"><i class="el-icon-s-promotion"></i>聊天</p>
+    <div class="title">
+      <div><i class="el-icon-s-promotion"></i>聊天</div>
+      <div>
+        <el-badge :value="waitUser.length" class="item">
+          <el-button size="mini" @click="drawer = true">通知</el-button>
+        </el-badge>
+      </div>
+    </div>
     <div class="chatBox">
       <el-row>
         <el-col :span="6">
@@ -8,7 +15,11 @@
             聊天列表
           </div>
           <ul class="userList">
-            <li v-for="list in allUser" :key="list" @click="setUser(list)">
+            <li
+              v-for="list in Object.keys(chartList)"
+              :key="list"
+              @click="setUser(list)"
+            >
               用户{{ list }}
             </li>
           </ul>
@@ -28,7 +39,14 @@
             >
               <el-avatar :src="image" v-if="!item.isKf"></el-avatar>
               <p :class="{ right: item.isKf, left: !item.isKf }">
-                {{ item.content }}
+                <span v-if="item.type === 'text'">{{ item.content }}</span>
+                <el-image
+                  v-else
+                  :src="item.content"
+                  style="width:100px; height:100px"
+                  :preview-src-list="[item.content]"
+                >
+                </el-image>
               </p>
               <el-avatar :src="image" v-if="item.isKf"></el-avatar>
             </div>
@@ -36,18 +54,25 @@
           <div class="footer">
             <el-input
               type="textarea"
-              v-model="kf.targetChat"
+              v-model="kfInput"
               :autosize="{ minRows: 4, maxRows: 4 }"
             ></el-input>
             <div>
               <div style="margin-top:10px">
-                <el-button
-                  type="warning"
-                  size="mini"
-                  icon="el-icon-picture"
-                  title="发送图片"
-                  @click="mockyh"
-                ></el-button>
+                <el-upload
+                  class="upload-demo"
+                  action="#"
+                  :show-file-list="false"
+                  :http-request="uploadImg"
+                  :before-upload="beforeUpload"
+                >
+                  <el-button
+                    type="warning"
+                    size="mini"
+                    icon="el-icon-picture"
+                    title="发送图片"
+                  ></el-button>
+                </el-upload>
               </div>
               <div style="margin-top:10px">
                 <el-button
@@ -55,7 +80,7 @@
                   size="mini"
                   icon="el-icon-position"
                   title="发送"
-                  @click="send"
+                  @click="sendText"
                 ></el-button>
               </div>
             </div>
@@ -63,6 +88,51 @@
         </el-col>
       </el-row>
     </div>
+    <el-drawer
+      :visible.sync="drawer"
+      direction="rtl"
+      size="20%"
+      custom-class="noticeDrawer"
+      :withHeader="false"
+    >
+      <el-tabs value="wait">
+        <el-tab-pane label="等待用户" name="wait">
+          <el-table
+            :data="waitUser"
+            size="mini"
+            ref="waitTable"
+            :height="sH + 'px'"
+          >
+            <el-table-column label="名称" prop="phone"></el-table-column>
+            <el-table-column label="管理">
+              <template slot-scope="scope">
+                <el-button
+                  type="text"
+                  size="mini"
+                  icon="el-icon-check"
+                  @click="accessUserIn(scope)"
+                  >接入</el-button
+                >
+                <el-button type="text" size="mini" icon="el-icon-error"
+                  >拒绝</el-button
+                >
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-tab-pane>
+        <el-tab-pane label="系统通知" name="notice">
+          <ul :style="{ height: sH + 'px' }" style="margin:5px;">
+            <li
+              v-for="(notice, index) in notices"
+              :key="index"
+              style="padding: 5px; border: 1px solid #ddd;word-break: break-all;border-radius:5px;"
+            >
+              {{ notice.content }}
+            </li>
+          </ul>
+        </el-tab-pane>
+      </el-tabs>
+    </el-drawer>
   </div>
 </template>
 
@@ -74,12 +144,17 @@ export default {
     return {
       user: "",
       image,
-      kf: {
-        targetChat: ""
-      },
-      allUser: [], // 所有已接入的用户
-      chartList: {}, // 当前客服接入的用户
-      websock: null
+      kfInput: "",
+      chartList: {}, // 当前客服接入的用户以及聊天记录 手机号为key
+      waitUser: [], // 等待接入的用户
+      websock: null,
+      drawer: false,
+      notices: [
+        // 系统通知
+        {
+          content: "xxxxxx"
+        }
+      ]
     };
   },
   computed: {
@@ -88,6 +163,9 @@ export default {
     },
     targetUserChatLength() {
       return this.chartList[this.user] && this.chartList[this.user].length;
+    },
+    sH() {
+      return document.body.clientHeight - 100;
     }
   },
   watch: {
@@ -102,10 +180,17 @@ export default {
     this.initWebSocket();
     this.getConfigResult({
       msgType: 2,
+      userPhone: "18225554225"
+    });
+    this.getConfigResult({
+      msgType: 2,
       userPhone: "18215554225"
     });
   },
   methods: {
+    accessUserIn(scope) {
+      this.$set(this.chartList, scope.row.phone, []);
+    },
     // websocket 初始化
     initWebSocket() {
       const token = sessionStorage.getItem("sessionId");
@@ -192,15 +277,20 @@ export default {
         kfSuccessAccess: () => {
           this.user = res.userPhone;
           this.$set(this.chartList, res.userPhone, []);
-          this.allUser.push(res.userPhone);
         },
         userHasAccess: () => {
-          this.allUser.push(res.userPhone);
+          // ...
         },
         userMessage: () => {},
         kfMessage: () => {},
-        systemMessage: () => {},
-        userOutLine: () => {},
+        systemMessage: () => {
+          this.notices.push({
+            conent: "系统通知"
+          });
+        },
+        userOutLine: () => {
+          // 下线用户如果如当前聊天用户id一致 则提示  并放入系统通知里
+        },
         kfOutLine: () => {}
       };
       const aMap = new Map([
@@ -229,19 +319,48 @@ export default {
     setUser(user) {
       this.user = user;
     },
-    send() {
+    send({ isKf = true, content = "", type = "text" }) {
       /* this.websocketToLogin(); */
       this.chartList[this.user].push({
-        isKf: true,
-        content: new Date().getTime() + "xx"
+        isKf,
+        content,
+        type
       });
-      console.log(this.chartList[this.user]);
     },
-    mockyh() {
-      this.getConfigResult({
-        msgType: 2,
-        userPhone: new Date().getTime()
+    sendText() {
+      this.send({
+        isKf: true,
+        content: this.kfInput,
+        type: "text"
       });
+      this.kfInput = "";
+    },
+    uploadImg(params) {
+      let fd = new FormData();
+      fd.append("file", params.file);
+      this.$http
+        .post("/imRecordsController/multiUpload", fd)
+        .then(s => {
+          this.send({
+            isKf: true,
+            content: s.data[0],
+            type: "img"
+          });
+        })
+        .catch(e => {
+          this.$message.error(e.msg);
+        });
+    },
+    beforeUpload(file) {
+      const { name } = file;
+      if (
+        ["jpg", "jpeg", "png"].includes(name.slice(name.lastIndexOf(".") + 1))
+      ) {
+        return true;
+      } else {
+        this.$message.warning("请选择图片");
+        return false;
+      }
     }
   }
 };
@@ -254,10 +373,11 @@ export default {
   height: 100%;
   width: 100%;
   .title {
-    height: 50px;
-    line-height: 50px;
-    padding-left: 20px;
+    padding: 20px;
     color: #409eff;
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: space-between;
   }
   .chatBox {
     position: absolute;

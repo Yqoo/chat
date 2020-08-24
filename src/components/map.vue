@@ -16,7 +16,15 @@
           {{ scope.row.longitude + "," + scope.row.latitude }}
         </template>
       </el-table-column>
-      <el-table-column label="图片" prop="image"></el-table-column>
+      <el-table-column label="图片" prop="img" show-overflow-tooltip>
+        <template slot-scope="scope">
+          <el-popover placement="right" width="400" trigger="hover">
+            <el-image :src="scope.row.img" :preview-src-list="[scope.row.img]">
+            </el-image>
+            <span slot="reference">{{ scope.row.img }}</span>
+          </el-popover>
+        </template>
+      </el-table-column>
       <el-table-column label="状态" prop="status">
         <template slot-scope="scope">
           {{ scope.row.status ? "启用" : "停用" }}
@@ -53,8 +61,8 @@
           <el-tag
             type="danger"
             style="margin-left:5px;"
-            @click="tableRowHandler(scope, 'del')"
-            >删除</el-tag
+            @click="tableRowHandler(scope, 'statu')"
+            >状态</el-tag
           >
         </template>
       </el-table-column>
@@ -107,7 +115,7 @@
             ></el-button>
           </el-input>
         </el-form-item>
-        <el-form-item label="图片" prop="image">
+        <el-form-item label="图片" prop="img">
           <el-upload
             class="upload-demo"
             action="#"
@@ -116,8 +124,14 @@
             :http-request="upload"
             :before-upload="beforeUpload"
           >
-            <el-input v-model="form.image"></el-input>
+            <el-input v-model="form.img"></el-input>
           </el-upload>
+          <el-image
+            v-if="imgUrl"
+            style="width: 200px; height: 200px"
+            :src="imgUrl"
+            fit="fit"
+          ></el-image>
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status" size="mini">
@@ -185,7 +199,7 @@ export default {
         describes: "",
         address: "",
         jwd: "",
-        image: "",
+        img: "",
         status: 0
       },
       rules: {
@@ -193,14 +207,15 @@ export default {
         desc: [{ required: true, message: "请填写描述", trigger: "blur" }],
         address: [{ required: true, message: "请填写地址", trigger: "blur" }],
         jwd: [{ required: true, message: "请填写经纬度", trigger: "blur" }],
-        image: [{ required: true, message: "请上传图片", trigger: "blur" }]
+        img: [{ required: true, message: "请上传图片", trigger: "blur" }]
       },
       file: null, //上传的文件,
       map: {
         visible: false,
         jwd: ""
       },
-      sType: "name"
+      sType: "name",
+      imgUrl: ""
     };
   },
   computed: {
@@ -236,26 +251,46 @@ export default {
       const type = name.slice(name.lastIndexOf(".") + 1);
       const flag = ["png", "jpeg", "jpg"].includes(type);
       flag
-        ? (this.form.image = name)
+        ? (this.form.img = name)
         : this.$message.warning("请上传格式为png/jpg的图片");
       return flag;
     },
     upload(params) {
-      this.file = params.file;
+      let fd = new FormData();
+      fd.append("file", params.file);
+      const Loading = this.$loading({
+        lock: true,
+        text: "图片上传中，请稍等...",
+        spinner: "el-icon-loading",
+        background: "rgba(0, 0, 0, 0.7)"
+      });
+      this.$http
+        .post("/storefrontsController/multiUpload", fd)
+        .then(s => {
+          this.imgUrl = s.data[0];
+          this.form.img = this.imgUrl;
+          Loading.close();
+        })
+        .catch(e => {
+          Loading.close();
+          this.$message.error(e.msg);
+        });
     },
     tableRowHandler(data, type) {
       const activeds = {
-        del: () => {
-          this.$confirm("确认删除当前数据？", "删除", {
-            confirmButtonText: "确定",
-            cancelButtonText: "取消",
-            type: "danger"
-          })
+        statu: () => {
+          this.$http
+            .post(
+              "/storefrontsController/updateStatus",
+              qs.stringify({
+                id: data.row.id,
+                status: data.row.status === 0 ? 1 : 0
+              })
+            )
             .then(() => {
-              const { $index } = data;
-              this.tableData.splice($index, 1);
+              data.row.status = data.row.status === 0 ? 1 : 0;
             })
-            .catch(e => e);
+            .catch(e => this.$message.error(e.msg));
         },
         update: () => {
           const { row } = data;
@@ -264,9 +299,10 @@ export default {
           this.form.describes = row.describes;
           this.form.address = row.address;
           this.form.status = row.status;
-          this.form.image = row.image;
+          this.form.img = row.img;
           this.form.jwd = row.longitude + "," + row.latitude;
           this.row.statu = "update";
+          this.imgUrl = row.img;
           this.row.visible = true;
         }
       };
@@ -288,12 +324,13 @@ export default {
         describes: "",
         address: "",
         jwd: "",
-        image: "",
+        img: "",
         status: 0
       });
       this.file = null;
       this.row.statu = "add";
       this.row.data = null;
+      this.imgUrl = "";
     },
     confirmSave() {
       this.$refs.form.validate(valid => {
@@ -305,7 +342,8 @@ export default {
           fd.append("address", row.address);
           fd.append("longitude", row.jwd.split(",")[0]);
           fd.append("latitude", row.jwd.split(",")[1]);
-          fd.append("image", this.file);
+          fd.append("img", this.imgUrl);
+          fd.append("status", row.status);
           if (this.row.statu === "update") fd.append("id", this.row.data.id);
           const url =
             this.row.statu === "add"
