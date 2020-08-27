@@ -101,6 +101,16 @@ export default {
           this.$router.push({
             path: "/personal"
           });
+        },
+        logout: () => {
+          this.$http
+            .get("/userController/loginout")
+            .then(() => {
+              this.$router.push({
+                path: "/login"
+              });
+            })
+            .catch(e => this.$message.error(e.msg));
         }
       };
       actived[command]();

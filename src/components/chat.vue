@@ -37,18 +37,31 @@
                 left: !item.isKf
               }"
             >
-              <el-avatar :src="image" v-if="!item.isKf"></el-avatar>
-              <p :class="{ right: item.isKf, left: !item.isKf }">
-                <span v-if="item.type === 'text'">{{ item.content }}</span>
-                <el-image
-                  v-else
-                  :src="item.content"
-                  style="width:100px; height:100px"
-                  :preview-src-list="[item.content]"
-                >
-                </el-image>
-              </p>
-              <el-avatar :src="image" v-if="item.isKf"></el-avatar>
+              <div v-if="item.type !== 'system'">
+                <el-avatar :src="image" v-if="!item.isKf"></el-avatar>
+                <p :class="{ right: item.isKf, left: !item.isKf }">
+                  <span v-if="item.type === 'text'">{{ item.content }}</span>
+                  <el-image
+                    v-if="item.type === 'img'"
+                    :src="item.content"
+                    style="width:100px; height:100px"
+                    :preview-src-list="[item.content]"
+                  >
+                  </el-image>
+                </p>
+                <el-avatar :src="image" v-if="item.isKf"></el-avatar>
+              </div>
+              <div v-else class="systemText">
+                {{
+                  item.content +
+                    "    " +
+                    new Date().getHours() +
+                    ":" +
+                    new Date().getMinutes() +
+                    ":" +
+                    new Date().getSeconds()
+                }}
+              </div>
             </div>
           </div>
           <div class="footer">
@@ -103,7 +116,7 @@
             ref="waitTable"
             :height="sH + 'px'"
           >
-            <el-table-column label="名称" prop="phone"></el-table-column>
+            <el-table-column label="名称" prop="userPhone"></el-table-column>
             <el-table-column label="管理">
               <template slot-scope="scope">
                 <el-button
@@ -112,9 +125,6 @@
                   icon="el-icon-check"
                   @click="accessUserIn(scope)"
                   >接入</el-button
-                >
-                <el-button type="text" size="mini" icon="el-icon-error"
-                  >拒绝</el-button
                 >
               </template>
             </el-table-column>
@@ -127,7 +137,14 @@
               :key="index"
               style="padding: 5px; border: 1px solid #ddd;word-break: break-all;border-radius:5px;"
             >
-              {{ notice.content }}
+              {{
+                notice.content +
+                  new Date().getHours() +
+                  ":" +
+                  new Date().getMinutes() +
+                  ":" +
+                  new Date().getSeconds()
+              }}
             </li>
           </ul>
         </el-tab-pane>
@@ -143,6 +160,7 @@ export default {
   data() {
     return {
       user: "",
+      kfInfo: {},
       image,
       kfInput: "",
       chartList: {}, // 当前客服接入的用户以及聊天记录 手机号为key
@@ -151,9 +169,6 @@ export default {
       drawer: false,
       notices: [
         // 系统通知
-        {
-          content: "xxxxxx"
-        }
       ]
     };
   },
@@ -177,23 +192,28 @@ export default {
     }
   },
   created() {
-    this.initWebSocket();
-    this.getConfigResult({
-      msgType: 2,
-      userPhone: "18225554225"
-    });
-    this.getConfigResult({
-      msgType: 2,
-      userPhone: "18215554225"
-    });
+    this.kfInfo = JSON.parse(localStorage.getItem("userInfo"));
+    this.websock || this.initWebSocket();
   },
   methods: {
     accessUserIn(scope) {
-      this.$set(this.chartList, scope.row.phone, []);
+      this.getConfigResult({
+        msgType: 1,
+        kefuId: this.kfInfo.id,
+        kefuName: this.kfInfo.name,
+        userPhone: scope.row.userPhone
+      });
     },
     // websocket 初始化
     initWebSocket() {
       const token = sessionStorage.getItem("sessionId");
+      if (!token) {
+        this.$message.error("请先登录");
+        this.$router.push({
+          path: "/login"
+        });
+        return;
+      }
       let ws = `ws://192.168.0.102:9876?access_token=${JSON.parse(
         token
       )}&loginType=system`;
@@ -232,7 +252,7 @@ export default {
     },
     // 数据接收 二进制文件处理
     websocketonmessage(e) {
-      var reader = new FileReader();
+      let reader = new FileReader();
       if (e.data instanceof Blob) {
         reader.readAsText(e.data, "UTF-8");
         reader.onload = () => {
@@ -256,40 +276,79 @@ export default {
       console.log("连接成功");
     },
     getConfigResult(res) {
+      console.log(res);
       /* 
         接收处理后的数据
-        msgType: 0 新用户等待接入（后台）userWaitAccess
-                1 客服申请用户接入（后台）kfApplicationAccess
-                2 客服成功接入kfSuccessAccess
-                3 用户已被接入（用户端）userHasAccess
-                4 用户消息userMessage
-                5 客服消息kfMessage
-                6 系统通知（用户端）
-                7 系统通知（客服端）systemMessage
-                8 用户下线userOutLine
-                9 客服下线kfOutLine
+        msgType:
+        0 新用户等待接入（后台）userWaitAccess
+        1 客服申请用户接入（后台）kfApplicationAccess
+        2 客服成功接入kfSuccessAccess
+        3 用户已被接入（用户端）userHasAccess
+        4 用户消息userMessage
+        5 客服消息kfMessage
+        6 系统通知（用户端）
+        7 系统通知（客服端）systemMessage
+        8 用户下线userOutLine
+        9 客服下线kfOutLine
       */
       const activeds = {
-        userWaitAccess: () => {
-          console.log(0);
+        userWaitAccess: res => {
+          this.$notify({
+            title: "新用户等待接入",
+            message: res.context,
+            type: "success"
+          });
+          this.waitUser.push(res);
         },
-        kfApplicationAccess: () => {},
-        kfSuccessAccess: () => {
+        kfApplicationAccess: res => {
+          this.sendSock({
+            msgType: 1,
+            kefuId: res.kefuId,
+            kefuName: res.kefuName,
+            userPhone: res.userPhone
+          });
+        },
+        kfSuccessAccess: res => {
+          this.waitUser = this.waitUser.filter(
+            // 等待列表移除已接入用户
+            wait => wait.userPhone !== res.userPhone
+          );
           this.user = res.userPhone;
           this.$set(this.chartList, res.userPhone, []);
         },
         userHasAccess: () => {
           // ...
         },
-        userMessage: () => {},
-        kfMessage: () => {},
-        systemMessage: () => {
-          this.notices.push({
-            conent: "系统通知"
+        userMessage: res => {
+          const reg = /^https?:\/\/(([a-zA-Z0-9_-])+(\.)?)*(:\d+)?(\/((\.)?(\?)?=?&?[a-zA-Z0-9_-](\?)?)*)*$/i;
+          const type = reg.test(res.context) ? "img" : "text";
+          this.chartList[this.user].push({
+            isKf: false,
+            content: res.context,
+            type: type
           });
         },
-        userOutLine: () => {
+        kfMessage: () => {},
+        systemMessage: res => {
+          this.$notify({
+            title: "系统通知",
+            message: res.context,
+            type: "success"
+          });
+          this.notices.push({
+            conent: res.context
+          });
+        },
+        userOutLine: res => {
           // 下线用户如果如当前聊天用户id一致 则提示  并放入系统通知里
+          this.chartList[res.userPhone].push({
+            isKf: true,
+            content: "当前用户已下线",
+            type: "system"
+          });
+          this.notices.push({
+            content: `${res.userPhone}用户已下线`
+          });
         },
         kfOutLine: () => {}
       };
@@ -304,23 +363,19 @@ export default {
         [8, "userOutLine"],
         [9, "kfOutLine"]
       ]);
-      activeds[aMap.get(res.msgType)]();
-    },
-    websocketToLogin() {
-      const info = JSON.parse(localStorage.getItem("userInfo"));
-      this.sendSock({
-        userPhone: "18011502613",
-        kefuId: info.id,
-        kefuName: info.name,
-        msgType: 1,
-        context: ""
-      });
+      activeds[aMap.get(res.msgType)](res);
     },
     setUser(user) {
       this.user = user;
     },
     send({ isKf = true, content = "", type = "text" }) {
-      /* this.websocketToLogin(); */
+      this.sendSock({
+        userPhone: this.user,
+        kefuId: this.kfInfo.id,
+        kefuName: this.kfInfo.name,
+        msgType: 5,
+        context: content
+      });
       this.chartList[this.user].push({
         isKf,
         content,
@@ -467,7 +522,7 @@ export default {
       }
       div p.left::after {
         border-right: 8px solid green;
-        left: -16px;
+        left: -15px;
       }
       div p.right::after {
         border-left: 8px solid #409eff;
@@ -487,5 +542,15 @@ export default {
       }
     }
   }
+}
+.systemText {
+  height: 25px;
+  line-height: 25px;
+  background-color: #ddd;
+  color: #fff;
+  border-radius: 4px;
+  width: 80%;
+  margin: 0 auto;
+  text-align: center;
 }
 </style>
