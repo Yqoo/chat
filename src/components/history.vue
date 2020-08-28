@@ -12,11 +12,9 @@
       <el-table-column label="客服姓名" prop="kefuName"></el-table-column>
       <el-table-column label="聊天详情" prop="detail">
         <template slot-scope="scope">
-          <el-button
-            type="success"
-            size="mini"
-            @click="getChatDetail(scope)"
-          ></el-button>
+          <el-button type="success" size="mini" @click="getChatDetail(scope)"
+            >详情</el-button
+          >
         </template>
       </el-table-column>
       <el-table-column label="创建时间" prop="createTime"></el-table-column>
@@ -47,6 +45,7 @@
 </template>
 
 <script>
+import qs from "qs";
 export default {
   name: "History",
   data() {
@@ -71,7 +70,16 @@ export default {
   },
   methods: {
     getChatDetail(scope) {
-      console.log(scope);
+      this.$http
+        .post(
+          "/imRecordsController/selectById",
+          qs.stringify({
+            id: scope.row.id
+          })
+        )
+        .then(s => {
+          console.log(JSON.parse(s.data.context));
+        });
     },
     searchSth() {
       this.getPage({

@@ -214,7 +214,7 @@ export default {
         });
         return;
       }
-      let ws = `ws://192.168.0.102:9876?access_token=${JSON.parse(
+      let ws = `ws://47.92.221.9:8080?access_token=${JSON.parse(
         token
       )}&loginType=system`;
       this.websock = new WebSocket(ws);
@@ -322,7 +322,7 @@ export default {
         userMessage: res => {
           const reg = /^https?:\/\/(([a-zA-Z0-9_-])+(\.)?)*(:\d+)?(\/((\.)?(\?)?=?&?[a-zA-Z0-9_-](\?)?)*)*$/i;
           const type = reg.test(res.context) ? "img" : "text";
-          this.chartList[this.user].push({
+          this.chartList[res.userPhone].push({
             isKf: false,
             content: res.context,
             type: type

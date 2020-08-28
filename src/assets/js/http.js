@@ -4,7 +4,9 @@ import { Message } from "element-ui";
 const http = axios.create({
   timeout: 5000, // 请求超时时间
   baseURL:
-    process.env.NODE_ENV === "development" ? "http://192.168.0.102:8090" : "", //http://26274230uh.51vip.biz
+    process.env.NODE_ENV === "development"
+      ? "http://47.92.221.9:80/im"
+      : "http://47.92.221.9:80/im", //http://26274230uh.51vip.biz
   withCredentials: true
 });
 http.defaults.headers.post["Content-Type"] =
