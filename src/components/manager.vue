@@ -1,5 +1,5 @@
 <template>
-  <div class="comp-register">
+  <div class="comp-manager">
     <p class="title"><i class="el-icon-service"></i>客服管理</p>
     <el-table
       :data="table.data"
@@ -15,7 +15,11 @@
           {{ scope.row.userType ? "管理人员" : "普通人员" }}
         </template>
       </el-table-column>
-      <el-table-column label="状态" prop="statu"></el-table-column>
+      <el-table-column label="状态" prop="statu">
+        <template slot-scope="scope">
+          {{ scope.row.status === 1 ? "启用" : "停用" }}
+        </template>
+      </el-table-column>
       <el-table-column width="250px" fixed="right">
         <template slot="header" slot-scope="scope">
           <div style="display: flex">
@@ -92,8 +96,8 @@
           ></el-input>
         </el-form-item>
         <el-form-item label="状态" prop="statu">
-          <el-radio v-model="form.data.statu" :label="1">启用</el-radio>
-          <el-radio v-model="form.data.statu" :label="0">停用</el-radio>
+          <el-radio v-model="form.data.status" :label="1">启用</el-radio>
+          <el-radio v-model="form.data.status" :label="0">停用</el-radio>
         </el-form-item>
         <el-form-item label="权限" prop="userType">
           <el-radio-group v-model="form.data.userType" size="mini">
@@ -116,7 +120,7 @@
 
 <script>
 export default {
-  name: "Register",
+  name: "manager",
   data() {
     return {
       userInfo: null,
@@ -136,7 +140,7 @@ export default {
           account: "",
           password: "",
           userType: 0,
-          statu: 0
+          status: 0
         },
         rules: {
           name: [{ required: true, message: "请填写姓名", trigger: "blur" }],
@@ -176,6 +180,7 @@ export default {
           this.form.data.name = row.name;
           this.form.data.account = row.account;
           this.form.data.userType = row.userType;
+          this.form.data.status = row.status;
           this.form.data.password = "";
           this.form.visible = true;
         }
@@ -190,7 +195,7 @@ export default {
           if (this.form.statu)
             url = `userController/adminUpdate?id=${this.row.id}&`;
           else url = `userController/add?`;
-          const compliteUrl = `${url}name=${params.name}&account=${params.account}&password=${params.password}&userType=${params.userType}`;
+          const compliteUrl = `${url}name=${params.name}&account=${params.account}&password=${params.password}&userType=${params.userType}&status=${params.status}`;
           this.$http
             .get(compliteUrl)
             .then(s => {
@@ -242,7 +247,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.comp-register {
+.comp-manager {
   width: 100%;
   height: 100%;
   position: relative;

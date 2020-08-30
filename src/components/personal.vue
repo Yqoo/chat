@@ -54,7 +54,7 @@
 </template>
 
 <script>
-import avatar from "@/assets/image/user.gif";
+import avatar from "@/assets/image/kefu.png";
 export default {
   name: "Personal",
   data() {

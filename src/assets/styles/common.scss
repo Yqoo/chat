@@ -200,3 +200,9 @@ ol {
 .el-form-item--small.el-form-item>label{
   font-size: 12px;
 }
+.el-dialog__body {
+  max-height: 500px;
+}
+.el-avatar {
+  background-color: #fff;
+}

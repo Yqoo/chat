@@ -59,13 +59,15 @@ export default {
               `/userController/login?account=${this.form.account}&password=${this.form.password}`
             )
             .then(s => {
-              const { user } = s.data;
+              const { user, resource } = s.data;
+              const rules = resource.map(r => r.logogram);
               localStorage.setItem(
                 "userInfo",
                 JSON.stringify({
                   id: user.id,
                   account: user.account,
-                  name: user.name
+                  name: user.name,
+                  rules
                 })
               );
               sessionStorage.setItem(

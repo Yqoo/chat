@@ -7,7 +7,7 @@
           <span v-if="!isCollapse">MyChat</span>
         </div>
         <el-menu
-          default-active="chat"
+          default-active="personal"
           class="el-menu-vertical-demo"
           background-color="rgba(48,65,86,1)"
           text-color="#fff"
@@ -15,21 +15,13 @@
           router
           :collapse="isCollapse"
         >
-          <el-menu-item index="register">
-            <i class="el-icon-service"></i>
-            <span slot="title">客服管理</span>
-          </el-menu-item>
-          <el-menu-item index="history">
-            <i class="el-icon-date"></i>
-            <span slot="title">聊天记录</span>
-          </el-menu-item>
-          <el-menu-item index="chat">
-            <i class="el-icon-s-promotion"></i>
-            <span slot="title">客服聊天</span>
-          </el-menu-item>
-          <el-menu-item index="map">
-            <i class="el-icon-map-location"></i>
-            <span slot="title">商家管理</span>
+          <el-menu-item
+            v-for="(menu, key) in ruleMenus"
+            :key="key"
+            :index="menu.name"
+          >
+            <i :class="menu.icon"></i>
+            <span slot="title">{{ menu.title }}</span>
           </el-menu-item>
         </el-menu>
       </el-col>
@@ -47,7 +39,7 @@
           <div>
             <el-dropdown trigger="click" @command="handleCommand">
               <div>
-                <img :src="require('@/assets/image/user.gif')" />
+                <img :src="require('@/assets/image/kefu.png')" />
                 <i class="el-icon-caret-bottom"></i>
               </div>
               <el-dropdown-menu slot="dropdown">
@@ -64,9 +56,6 @@
             </el-dropdown>
           </div>
         </div>
-        <!--   <el-tabs v-for="item in tab" :key="item.path">
-          <el-tab-pane></el-tab-pane>
-        </el-tabs> -->
         <transition name="slide-fade">
           <keep-alive>
             <router-view></router-view>
@@ -86,13 +75,37 @@ export default {
       tab: {
         list: [],
         id: ""
-      }
+      },
+      menus: {
+        manager: {
+          name: "manager",
+          title: "客服管理",
+          icon: "el-icon-service"
+        },
+        history: { name: "history", title: "聊天记录", icon: "el-icon-date" },
+        chat: { name: "chat", title: "客服聊天", icon: "el-icon-s-promotion" },
+        map: { name: "map", title: "商家管理", icon: "el-icon-map-location" }
+      },
+      rules: []
     };
   },
-  mounted() {
-    this.$router.push({
-      path: "/chat"
-    });
+  computed: {
+    ruleMenus() {
+      let obj = {};
+      this.rules.forEach(r => {
+        obj[r] = this.menus[r];
+      });
+      for (let key in obj) {
+        obj[key] || delete obj[key];
+      }
+      return obj;
+    }
+  },
+  created() {
+    const { rules } = JSON.parse(localStorage.getItem("userInfo"));
+    this.rules = rules;
+    let nowPath = this.$route.path;
+    if (nowPath !== "/personal") this.$router.push("/personal");
   },
   methods: {
     handleCommand(command) {
@@ -128,7 +141,7 @@ export default {
       line-height: 50px;
     }
     .left {
-      padding-left: 20px;
+      padding-left: 10px;
       background: rgba(48, 65, 86, 1);
       color: #fff;
       img {
