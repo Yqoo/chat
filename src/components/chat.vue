@@ -416,7 +416,13 @@ export default {
         this.$message.warning("请选择图片");
         return false;
       }
+    },
+    beforeunloadHandler(e) {
+      console.log(e);
     }
+  },
+  mounted() {
+    window.addEventListener("beforeunload", e => this.beforeunloadHandler(e));
   }
 };
 </script>
