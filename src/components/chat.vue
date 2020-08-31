@@ -20,7 +20,7 @@
               :key="list"
               @click="setUser(list)"
             >
-              用户{{ list }}
+              {{ list }}
             </li>
           </ul>
         </el-col>
@@ -38,7 +38,7 @@
               }"
             >
               <div v-if="item.type !== 'system'">
-                <el-avatar :src="image" v-if="!item.isKf"></el-avatar>
+                <el-avatar :src="yonghu" v-if="!item.isKf"></el-avatar>
                 <p :class="{ right: item.isKf, left: !item.isKf }">
                   <span v-if="item.type === 'text'">{{ item.content }}</span>
                   <el-image
@@ -108,28 +108,27 @@
       custom-class="noticeDrawer"
       :withHeader="false"
     >
-      <el-tabs value="wait">
-        <el-tab-pane label="等待用户" name="wait">
-          <el-table
-            :data="waitUser"
-            size="mini"
-            ref="waitTable"
-            :height="sH + 'px'"
-          >
-            <el-table-column label="名称" prop="userPhone"></el-table-column>
-            <el-table-column label="管理">
-              <template slot-scope="scope">
-                <el-button
-                  type="text"
-                  size="mini"
-                  icon="el-icon-check"
-                  @click="accessUserIn(scope)"
-                  >接入</el-button
-                >
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-tab-pane>
+      <el-table
+        :data="waitUser"
+        size="mini"
+        ref="waitTable"
+        :height="sH + 'px'"
+      >
+        <el-table-column label="名称" prop="userPhone"></el-table-column>
+        <el-table-column label="管理">
+          <template slot-scope="scope">
+            <el-button
+              type="text"
+              size="mini"
+              icon="el-icon-check"
+              @click="accessUserIn(scope)"
+              >接入</el-button
+            >
+          </template>
+        </el-table-column>
+      </el-table>
+      <!-- <el-tabs value="wait">
+        <el-tab-pane label="等待用户" name="wait"></el-tab-pane>
         <el-tab-pane label="系统通知" name="notice">
           <ul :style="{ height: sH + 'px' }" style="margin:5px;">
             <li
@@ -148,13 +147,14 @@
             </li>
           </ul>
         </el-tab-pane>
-      </el-tabs>
+      </el-tabs> -->
     </el-drawer>
   </div>
 </template>
 
 <script>
-import image from "@/assets/image/user.gif";
+import image from "@/assets/image/kefu.png";
+import yonghu from "@/assets/image/yonghu.png";
 export default {
   name: "Chat",
   data() {
@@ -162,6 +162,7 @@ export default {
       user: "",
       kfInfo: {},
       image,
+      yonghu,
       kfInput: "",
       chartList: {}, // 当前客服接入的用户以及聊天记录 手机号为key
       waitUser: [], // 等待接入的用户
@@ -392,6 +393,12 @@ export default {
     },
     uploadImg(params) {
       let fd = new FormData();
+      const Loading = this.$loading({
+        lock: true,
+        text: "图片数据传输中...",
+        spinner: "el-icon-loading",
+        background: "rgba(0, 0, 0, 0.3)"
+      });
       fd.append("file", params.file);
       this.$http
         .post("/imRecordsController/multiUpload", fd)
@@ -401,9 +408,11 @@ export default {
             content: s.data[0],
             type: "img"
           });
+          Loading.close();
         })
         .catch(e => {
           this.$message.error(e.msg);
+          Loading.close();
         });
     },
     beforeUpload(file) {
@@ -513,7 +522,7 @@ export default {
         color: #fff;
       }
       div p.left {
-        background: green;
+        background: #67c23a;
         margin: 5px 0 10px 10px;
       }
       div p.right {
@@ -527,7 +536,7 @@ export default {
         top: 5px;
       }
       div p.left::after {
-        border-right: 8px solid green;
+        border-right: 8px solid #67c23a;
         left: -15px;
       }
       div p.right::after {

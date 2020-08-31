@@ -11,9 +11,9 @@ const routes = [
     component: Home,
     children: [
       {
-        path: "/register",
-        name: "Register",
-        component: () => import("@/components/register.vue")
+        path: "/manager",
+        name: "Manager",
+        component: () => import("@/components/manager.vue")
       },
       {
         path: "/history",
