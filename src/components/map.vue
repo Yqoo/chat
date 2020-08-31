@@ -124,7 +124,7 @@
             :http-request="upload"
             :before-upload="beforeUpload"
           >
-            <el-input v-model="form.img"></el-input>
+            <el-input v-model="form.img" v-if="row.statu === 'add'"></el-input>
           </el-upload>
           <el-image
             v-if="imgUrl"
@@ -351,14 +351,12 @@ export default {
               : "/storefrontsController/update";
           this.$http
             .post(url, fd)
-            .then(s => {
-              const Row = Object.assign({}, s.data);
-              this.row.statu === "update"
-                ? this.getPage({
-                    current: this.table.current,
-                    size: this.table.size
-                  })
-                : this.table.data.push(Row);
+            .then(() => {
+              // const Row = Object.assign({}, s.data);
+              this.getPage({
+                current: this.table.current,
+                size: this.table.size
+              });
               this.$message.success("保存成功");
               this.row.visible = false;
             })

@@ -21,6 +21,16 @@
               @click="setUser(list)"
             >
               {{ list }}
+              <span class="newMessage" v-if="tips[list] === 'new'">new</span>
+              <span style="color:red" v-if="tips[list] === 'outline'">
+                <el-button
+                  type="text"
+                  size="mini"
+                  class="el-icon-error"
+                  @click="removeOutLineUser(list)"
+                  title="移除"
+                ></el-button>
+              </span>
             </li>
           </ul>
         </el-col>
@@ -170,7 +180,8 @@ export default {
       drawer: false,
       notices: [
         // 系统通知
-      ]
+      ],
+      tips: {}
     };
   },
   computed: {
@@ -190,6 +201,11 @@ export default {
       this.$nextTick(() => {
         ele.scrollTop = ele.scrollHeight;
       });
+    },
+    user(val) {
+      if (this.tips[val] === "new") {
+        this.$set(this.tips, val, "");
+      }
     }
   },
   created() {
@@ -277,7 +293,6 @@ export default {
       console.log("连接成功");
     },
     getConfigResult(res) {
-      console.log(res);
       /* 
         接收处理后的数据
         msgType:
@@ -316,6 +331,7 @@ export default {
           );
           this.user = res.userPhone;
           this.$set(this.chartList, res.userPhone, []);
+          this.$set(this.tips, res.userPhone, "");
         },
         userHasAccess: () => {
           // ...
@@ -328,6 +344,9 @@ export default {
             content: res.context,
             type: type
           });
+          if (res.userPhone !== this.user) {
+            this.$set(this.tips, res.userPhone, "new");
+          }
         },
         kfMessage: () => {},
         systemMessage: res => {
@@ -350,6 +369,7 @@ export default {
           this.notices.push({
             content: `${res.userPhone}用户已下线`
           });
+          this.$set(this.tips, res.userPhone, "outline");
         },
         kfOutLine: () => {}
       };
@@ -365,6 +385,9 @@ export default {
         [9, "kfOutLine"]
       ]);
       activeds[aMap.get(res.msgType)](res);
+    },
+    removeOutLineUser(userPhone) {
+      this.$delete(this.chartList, userPhone);
     },
     setUser(user) {
       this.user = user;
@@ -425,7 +448,27 @@ export default {
         this.$message.warning("请选择图片");
         return false;
       }
+    },
+    beforeunloadHandler(e) {
+      e = e || window.event;
+      if (e) {
+        e.returnValue = "关闭提示";
+      }
+      return "关闭提示";
     }
+  },
+  mounted() {
+    window.addEventListener("beforeunload", e => this.beforeunloadHandler(e));
+    const timer = setInterval(() => {
+      this.sendSock({
+        userPhone: this.user,
+        kefuId: this.kfInfo.id,
+        kefuName: this.kfInfo.name,
+        msgType: 10,
+        context: "ping"
+      });
+    }, 20 * 60 * 1000);
+    this.$once("hook:beforeDestroy", () => clearInterval(timer));
   }
 };
 </script>
@@ -561,5 +604,11 @@ export default {
   width: 80%;
   margin: 0 auto;
   text-align: center;
+}
+.newMessage {
+  padding: 2px 3px;
+  border-radius: 7px;
+  background: #67c23a;
+  color: #fff;
 }
 </style>

@@ -15,6 +15,14 @@
           router
           :collapse="isCollapse"
         >
+          <!-- <el-menu-item index="index">
+            <i class="el-icon-document"></i>
+            <span>首页</span>
+          </el-menu-item> -->
+          <el-menu-item index="personal">
+            <i class="el-icon-user-solid"></i>
+            <span>个人信息</span>
+          </el-menu-item>
           <el-menu-item
             v-for="(menu, key) in ruleMenus"
             :key="key"
@@ -104,8 +112,6 @@ export default {
   created() {
     const { rules } = JSON.parse(localStorage.getItem("userInfo"));
     this.rules = rules;
-    let nowPath = this.$route.path;
-    if (nowPath !== "/personal") this.$router.push("/personal");
   },
   methods: {
     handleCommand(command) {

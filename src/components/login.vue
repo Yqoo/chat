@@ -75,7 +75,7 @@ export default {
                 JSON.stringify(s.data.sessionId)
               );
               this.$router.push({
-                path: "/"
+                path: "/personal"
               });
             })
             .catch(e => this.$message.error(e.msg));

@@ -11,6 +11,11 @@ const routes = [
     component: Home,
     children: [
       {
+        path: "/index",
+        name: "Index",
+        component: () => import("@/components/index.vue")
+      },
+      {
         path: "/manager",
         name: "Manager",
         component: () => import("@/components/manager.vue")
@@ -45,7 +50,7 @@ const routes = [
 ];
 
 const router = new VueRouter({
-  mode: "history",
+  mode: "hash",
   base: process.env.BASE_URL,
   routes
 });
