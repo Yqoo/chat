@@ -451,10 +451,7 @@ export default {
     },
     beforeunloadHandler(e) {
       e = e || window.event;
-      if (e) {
-        e.returnValue = "关闭提示";
-      }
-      return "关闭提示";
+      return (e.returnValue = "xxxx");
     }
   },
   mounted() {
